@@ -1,23 +1,29 @@
 var xhr = new XMLHttpRequest();
 var response;
 
-function getTime() {
-  xhr.open("GET", "http://localhost:8080/api/gettime/", false);
+function getAlbums() {
+  xhr.open("GET", "http://localhost:8080/api/spotifyhome/", true);
+  xhr.onload = function() {
+    displayAlbums(response);
+  };
+  xhr.onerror = function () {
+    console.error(xhr.statusText);
+  };
   xhr.send();
-  response = JSON.parse(xhr.response);
+};
+
+function displayAlbums() {
+  var response = JSON.parse(xhr.response);
+  var albums = response.albums
   console.log(response);
+  console.log(xhr.status);
 
-  document.getElementById('result').innerHTML = 'Result ' + xhr.status;
-  document.getElementById('hours').innerHTML = 'Hours: ' + response.hour;
-  document.getElementById('minutes').innerHTML = 'Minutes ' + response.minute;
-  document.getElementById('seconds').innerHTML = 'Seconds ' + response.second;
-}
+  var albumsList = document.getElementById('albums');
+  albumsList.innerHTML = ''
 
-function spotifyHome() {
-  xhr.open("GET", "http://localhost:8080/api/spotifyhome/", false);
-  xhr.send();
-  response = JSON.parse(xhr.response);
-  console.log(response);
-
-  document.getElementById('album1').innerHTML = '<a href=' + response.album1 + '>' + response.album1 + '</a>';
-}
+  for (var i = 0; i < albums.length; i++) {
+    albumsList.innerHTML +=
+    '</br><div><p><b>' + albums[i].name + '</b></p>' +
+    '<a target="_blank" href=' + albums[i].link + '><img src=' + albums[i].image + ' width=200></a></div>';
+  };
+};

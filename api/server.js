@@ -4,7 +4,8 @@ var url = require('url')
 
 function fetchRecentlyPlayed(callback) {
   var resData = ''
-  var token = 'BQAEgSa9o_-V92V1dHnNMAwy8VkRg5Bhb-Nyfim22RebMglIHJI1YUvUatMu8gYVqBVJ2g5mcumT_HoHAHllFsFPQ0QOf_pL8aL5in6S1FX5aGUEeGm9-HYnnNxQpWdyXNa-dbTngsMqbraXPu6Q'
+//  var token = 'BQCK8khBnpzwszzo-qb-adKIF0ZuXYIIZP5Wbet-cvkdjeqGcxr445ioaiD-olY2iaPVLBIgNTjmQM-4nm0Fm802oAwyZpAGPY3lHDwjrbN-F2XtVecd9aWBwVgCX8I0qjNN5A_4Z_y6UWoUPCs5'
+  var token = process.env.SPAPIKEY
 
   const options = {
     hostname: 'api.spotify.com',

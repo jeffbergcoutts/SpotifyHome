@@ -1,11 +1,62 @@
+require('dotenv').config()
+
 var http = require('http')
 var https = require('https')
 var url = require('url')
+var querystring = require('querystring')
+
+var clientID = process.env.CLIENTID
+var clientSecret = process.env.CLIENTSECRET
+
+function requestToken(code, callback) {
+  var resBody = ''
+
+  var postData = querystring.stringify({
+    'grant_type': 'authorization_code',
+    'code': code,
+    'redirect_uri': 'http://localhost:8080/callback',
+    'client_id': clientID,
+    'client_secret': clientSecret
+  })
+
+  const options = {
+    hostname: 'accounts.spotify.com',
+    path: '/api/token',
+    method: 'POST',
+    headers: {
+      'Authorization': 'Basic ' + (new Buffer(clientID + ':' + clientSecret).toString('base64')),
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Accept': 'application/json'
+    }
+  }
+
+  var req = https.request(options, function(res) {
+    console.log('STATUS:' + res.statusCode)
+    res.setEncoding('utf8')
+    res.on('data', function(chunk) {
+      resBody = resBody + chunk
+    })
+    res.on('end', function() {
+      callback(null, JSON.parse(resBody))
+    })
+  })
+
+  req.on('error', function(err) {
+    console.error(err)
+  })
+
+  // write data to request body
+  console.log(postData)
+  req.write(postData)
+  req.end()
+
+//  var token = code + 'token'
+//  callback(null, token)
+}
 
 function fetchRecentlyPlayed(callback) {
   var resData = ''
-//  var token = 'BQCK8khBnpzwszzo-qb-adKIF0ZuXYIIZP5Wbet-cvkdjeqGcxr445ioaiD-olY2iaPVLBIgNTjmQM-4nm0Fm802oAwyZpAGPY3lHDwjrbN-F2XtVecd9aWBwVgCX8I0qjNN5A_4Z_y6UWoUPCs5'
-  var token = process.env.SPAPIKEY
+  var token = process.env.ACCESSTOKEN
 
   const options = {
     hostname: 'api.spotify.com',
@@ -77,8 +128,30 @@ var server = http.createServer(function (req, res) {
         res.end(filteredResults)
       }
     }
-  }
-    else {
+  } else if (/^\/api\/login/.test(req.url)) {
+    res.writeHead(302, {'Location': 'https://accounts.spotify.com/authorize?client_id=' + clientID + '&response_type=code&redirect_uri=http://localhost:8080/callback&scope=user-read-private'})
+    res.end()
+  } else if (/^\/callback/.test(req.url)) {
+    var code = request.query.code
+    requestToken(code, storeToken)
+    function storeToken(err, response) {
+      if (err) {
+        console.error(err)
+      } else {
+        var accessToken = response.access_token
+        var refreshToken = response.refresh_token
+        console.log(accessToken)
+        console.log(refreshToken)
+        // need to store auth token in webstorage for user
+        //    https://stormpath.com/blog/where-to-store-your-jwts-cookies-vs-html5-web-storage
+        // or a db?
+        //  https://blog.hyphe.me/using-refresh-tokens-for-permanent-user-sessions-in-node/
+
+      }
+    }
+    res.writeHead(302, {'Location': 'http://localhost:8000'})
+    res.end()
+  } else {
     res.writeHead(404)
     res.end()
   }

@@ -3,6 +3,7 @@ var response;
 
 function getAlbums() {
   xhr.open("GET", "http://localhost:8080/api/spotifyhome/", true);
+  xhr.withCredentials = true;
   xhr.onload = function() {
     displayAlbums(response);
   };
@@ -14,6 +15,7 @@ function getAlbums() {
 
 function getRecentlyPlayed() {
   xhr.open("GET", "http://localhost:8080/api/recentlyplayed/", true);
+  xhr.withCredentials = true;
   xhr.onload = function() {
     displayAlbums(response);
   };

@@ -4,9 +4,18 @@ var http = require('http')
 var https = require('https')
 var url = require('url')
 var querystring = require('querystring')
+var sessions = require('client-sessions')
 
 var clientID = process.env.CLIENTID
 var clientSecret = process.env.CLIENTSECRET
+var cookieSecret = process.env.COOKIESECRET
+
+var requestSessionHandler = sessions({
+    cookieName: 'authTokens', // cookie name dictates the key name added to the request object
+    secret: cookieSecret, // should be a large unguessable string
+    duration: 24 * 60 * 60 * 1000, // how long the session will stay valid in ms
+    activeDuration: 1000 * 60 * 5 // if expiresIn < activeDuration, the session will be extended by activeDuration milliseconds
+})
 
 function requestToken(code, callback) {
   var resBody = ''
@@ -46,18 +55,12 @@ function requestToken(code, callback) {
   })
 
   // write data to request body
-  console.log(postData)
   req.write(postData)
   req.end()
-
-//  var token = code + 'token'
-//  callback(null, token)
 }
 
-function fetchRecentlyPlayed(callback) {
+function fetchRecentlyPlayed(token, callback) {
   var resData = ''
-  var token = process.env.ACCESSTOKEN
-
   const options = {
     hostname: 'api.spotify.com',
     path: '/v1/me/player/recently-played?type=track',
@@ -72,7 +75,7 @@ function fetchRecentlyPlayed(callback) {
       callback(err, null)
     })
     response.on('end', function() {
-      resDataParsed = JSON.parse(resData)
+      var resDataParsed = JSON.parse(resData)
       if (resDataParsed.error) {
         callback(JSON.stringify(resDataParsed.error), null)
       } else {
@@ -100,8 +103,9 @@ function filterResults(results) {
 }
 
 var server = http.createServer(function (req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8000')
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE')
+  res.setHeader('Access-Control-Allow-Credentials', 'true')
 
   var request = url.parse(req.url, true)
 
@@ -117,7 +121,15 @@ var server = http.createServer(function (req, res) {
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(albums))
   } else if (/^\/api\/recentlyplayed/.test(req.url)) {
-    fetchRecentlyPlayed(sendResponse)
+    var token = ''
+
+    requestSessionHandler(req, res, function () {
+      token = req.authTokens.accessToken
+  //    req.authTokens.refreshToken = refreshToken
+    })
+
+    fetchRecentlyPlayed(token, sendResponse)
+
     function sendResponse(err, recentAlbums) {
       if (err) {
         res.writeHead(502, { 'Content-Type': 'application/json' })
@@ -129,7 +141,7 @@ var server = http.createServer(function (req, res) {
       }
     }
   } else if (/^\/api\/login/.test(req.url)) {
-    res.writeHead(302, {'Location': 'https://accounts.spotify.com/authorize?client_id=' + clientID + '&response_type=code&redirect_uri=http://localhost:8080/callback&scope=user-read-private'})
+    res.writeHead(302, {'Location': 'https://accounts.spotify.com/authorize?client_id=' + clientID + '&response_type=code&redirect_uri=http://localhost:8080/callback&scope=user-read-recently-played'})
     res.end()
   } else if (/^\/callback/.test(req.url)) {
     var code = request.query.code
@@ -138,19 +150,13 @@ var server = http.createServer(function (req, res) {
       if (err) {
         console.error(err)
       } else {
-        var accessToken = response.access_token
-        var refreshToken = response.refresh_token
-        console.log(accessToken)
-        console.log(refreshToken)
-        // need to store auth token in webstorage for user
-        //    https://stormpath.com/blog/where-to-store-your-jwts-cookies-vs-html5-web-storage
-        // or a db?
-        //  https://blog.hyphe.me/using-refresh-tokens-for-permanent-user-sessions-in-node/
-
+        requestSessionHandler(req, res, function () {
+            req.authTokens.accessToken = response.access_token
+        })
       }
+      res.writeHead(302, {'Location': 'http://localhost:8000'})
+      res.end()
     }
-    res.writeHead(302, {'Location': 'http://localhost:8000'})
-    res.end()
   } else {
     res.writeHead(404)
     res.end()

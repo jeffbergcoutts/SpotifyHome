@@ -10,15 +10,14 @@
     <body onload="getAlbums()">
       <div>
         <a href="http://localhost:8080/api/login/" class="btn btn-primary">Log in with Spotify</a>
-        <button onclick="login()">Login</button>
+      </div>
+      <div>
+        <button onclick="getRecentlyPlayed()">Recently Played</button>
       </div>
       <div class="container">
         <h2>Spotify Home</h2>
         <div id="albums">
         </div>
-      </div>
-      <div>
-        <button onclick="getRecentlyPlayed()">Recently Played</button>
       </div>
       <script src="main.js"></script>
       <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>

@@ -18,7 +18,6 @@ var requestSessionHandler = sessions({
 })
 
 function requestToken(code, callback) {
-  var resBody = ''
 
   var postData = querystring.stringify({
     'grant_type': 'authorization_code',
@@ -39,6 +38,8 @@ function requestToken(code, callback) {
     }
   }
 
+  var resBody = ''
+
   var req = https.request(options, function(res) {
     console.log('STATUS:' + res.statusCode)
     res.setEncoding('utf8')
@@ -47,6 +48,46 @@ function requestToken(code, callback) {
     })
     res.on('end', function() {
       callback(null, JSON.parse(resBody))
+    })
+  })
+
+  req.on('error', function(err) {
+    console.error(err)
+  })
+
+  // write data to request body
+  req.write(postData)
+  req.end()
+}
+
+function getNewAccessToken(refreshToken, callback) {
+  var postData = querystring.stringify({
+    'grant_type': 'refresh_token',
+    'refresh_token': refreshToken
+  })
+
+  const options = {
+    hostname: 'accounts.spotify.com',
+    path: '/api/token',
+    method: 'POST',
+    headers: {
+      'Authorization': 'Basic ' + (new Buffer(clientID + ':' + clientSecret).toString('base64')),
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Accept': 'application/json'
+    }
+  }
+
+  var resBody = ''
+
+  var req = https.request(options, function(res) {
+    console.log('STATUS:' + res.statusCode)
+    res.setEncoding('utf8')
+    res.on('data', function(chunk) {
+      resBody = resBody + chunk
+    })
+    res.on('end', function() {
+      console.log(resBody)
+//      callback(token, callback)
     })
   })
 
@@ -77,7 +118,8 @@ function fetchRecentlyPlayed(token, callback) {
     response.on('end', function() {
       var resDataParsed = JSON.parse(resData)
       if (resDataParsed.error) {
-        callback(JSON.stringify(resDataParsed.error), null)
+        var errMessage = resDataParsed.error.message
+        callback(errMessage, null)
       } else {
         callback(null, resData)
       }
@@ -132,6 +174,15 @@ var server = http.createServer(function (req, res) {
 
     function sendResponse(err, recentAlbums) {
       if (err) {
+        if (err == 'Invalid access token') {
+          console.log('yup')
+          var refreshToken = ''
+          requestSessionHandler(req, res, function () {
+            refreshToken = req.authTokens.refreshToken
+            console.log('refreshToken ' + refreshToken)
+          })
+          getNewAccessToken(refreshToken, fetchRecentlyPlayed)
+        }
         res.writeHead(502, { 'Content-Type': 'application/json' })
         res.end(err)
       } else {

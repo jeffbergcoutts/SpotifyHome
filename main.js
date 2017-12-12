@@ -1,6 +1,28 @@
 var xhr = new XMLHttpRequest();
 var response;
 
+function getLoggedIn(callback) {
+  xhr.open("GET", "http://localhost:8080/api/getloggedin/", true);
+  xhr.withCredentials = true;
+  xhr.onload = function() {
+    response = xhr.response;
+    if (response == 'no token') {
+      var loginButton = document.getElementById('loginButton');
+      loginButton.style.display = 'block';
+    } else {
+      var loginButton = document.getElementById('loginButton');
+      loginButton.style.display = 'block';
+    };
+    console.log('response: ' + xhr.response);
+
+    callback();
+  };
+  xhr.onerror = function () {
+    console.error(xhr.statusText);
+  };
+  xhr.send();
+};
+
 function getAlbums() {
   xhr.open("GET", "http://localhost:8080/api/spotifyhome/", true);
   xhr.withCredentials = true;

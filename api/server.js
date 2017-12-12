@@ -87,7 +87,8 @@ function getNewAccessToken(refreshToken, callback) {
     })
     res.on('end', function() {
       console.log(resBody)
-//      callback(token, callback)
+      callback(resBody)
+      // need to store new token in Cookie. need to refrach storeToken so it can exist outside of callback in api
     })
   })
 
@@ -203,10 +204,54 @@ var server = http.createServer(function (req, res) {
       } else {
         requestSessionHandler(req, res, function () {
             req.authTokens.accessToken = response.access_token
+            req.authTokens.refreshToken = response.refresh_token
+            var expiresIn = response.expires_in * 1000
+            var date = new Date()
+            req.authTokens.expiryDate = expiresIn + date.getTime()
         })
       }
       res.writeHead(302, {'Location': 'http://localhost:8000'})
       res.end()
+    }
+  } else if (/^\/api\/getloggedin/.test(req.url)) {
+    var accessToken = ''
+    var refreshToken = ''
+    var expiryDate = ''
+    var sendResponse = ''
+    requestSessionHandler(req, res, function () {
+        accessToken = req.authTokens.accessToken
+        refreshToken = req.authTokens.refreshToken
+        expiryDate = req.authTokens.expiryDate
+    })
+    if (accessToken == null) {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end('no token')
+    } else {
+      var date = new Date()
+      if (date.getTime() < expiryDate) {
+        //get new accessToken from refreshToken
+        console.log('old: ' + accessToken)
+        console.log(refreshToken)
+        console.log(expiryDate)
+        console.log(date.getTime())
+        getNewAccessToken(refreshToken, sendResponse)
+      } else {
+        console.log('same: ' + accessToken)
+        console.log(refreshToken)
+        console.log(expiryDate)
+        console.log(date.getTime())
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end('logged in')
+      }
+      function sendResponse(response) {
+        console.log(response)
+//        console.log('new: ' + accessToken)
+//        console.log(refreshToken)
+//        console.log(expiryDate)
+//        console.log(date.getTime())
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end('logged in')
+      }
     }
   } else {
     res.writeHead(404)

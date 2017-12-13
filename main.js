@@ -25,10 +25,8 @@ function getAlbums() {
   xhr.open("GET", "http://localhost:8080/api/spotifyhome/", true);
   xhr.withCredentials = true;
   xhr.onload = function() {
-    console.log(xhr.statusText)
-    console.log(xhr.response)
-    console.log(JSON.parse(xhr.response))
-//    displayAlbums(response);
+//    console.log(JSON.parse(xhr.response));
+    displayAlbums(JSON.parse(xhr.response));
   };
   xhr.onerror = function () {
     console.error(xhr.statusText);
@@ -56,7 +54,7 @@ function displayAlbums(response) {
 
   for (var i = 0; i < albums.length; i++) {
     albumsList.innerHTML +=
-    '</br><div><p><b>' + albums[i].name + '</b> ' + albums[i].artist + '</p>' +
+    '</br><div><p><b>' + albums[i].name + '</b></br> ' + albums[i].artist + '</p>' +
     '<a target="_blank" href=' + albums[i].link + '><img src=' + albums[i].image + ' width=200></a></div>';
   };
 };

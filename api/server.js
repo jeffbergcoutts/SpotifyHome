@@ -121,6 +121,8 @@ function fetchSavedAlbums(token, callback) {
         var errMessage = resDataParsed.error.message
         callback(errMessage, null)
       } else {
+        // need to check if there is more to display and make separate calls for each page
+        console.log(JSON.parse(resData).total)
         callback(null, resData)
       }
     })
@@ -156,10 +158,13 @@ function fetchRecentlyPlayed(token, callback) {
 
 function filterResults(results, filter) {
   // parse response, create my own JSON object and return that with stringify
+  var parsedResults = JSON.parse(results)
+  var items = parsedResults.items
+  var albums = { albums: [] }
+
+  // 0 = Recently Played
+  // 1 = Albums in Library
   if (filter == 0) {
-    var parsedResults = JSON.parse(results)
-    var items = parsedResults.items
-    var albums = { albums: [] }
     var lastAlbum = ''
 
     for (var i = 0; i < parsedResults.items.length; i++) {
@@ -171,7 +176,17 @@ function filterResults(results, filter) {
     }
     return JSON.stringify(albums)
   } else if (filter == 1) {
-    return JSON.stringify(results)
+    for (var i = 0; i < parsedResults.items.length; i++) {
+      var albumName = parsedResults.items[i].album.name
+      var artistName = parsedResults.items[i].album.artists[0].name
+      var playUrl = parsedResults.items[i].album.external_urls.spotify
+      var albumImage = parsedResults.items[i].album.images[1].url
+
+      albums.albums.push({ name: albumName, artist: artistName, link: playUrl, image: albumImage })
+    }
+    return JSON.stringify(albums)
+// for viewing JSON object in Chrome
+//    return results
   }
 }
 
@@ -200,7 +215,7 @@ var server = http.createServer(function (req, res) {
         res.end(err)
       } else {
         var filteredAlbums = filterResults(recentAlbums, 1)
-        res.end('here here: ' + filteredAlbums)
+        res.end(filteredAlbums)
       }
     }
 

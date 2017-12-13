@@ -11,10 +11,8 @@ function getLoggedIn(callback) {
       loginButton.style.display = 'block';
     } else {
       var loginButton = document.getElementById('loginButton');
-      loginButton.style.display = 'block';
+      loginButton.style.display = 'none';
     };
-    console.log('response: ' + xhr.response);
-
     callback();
   };
   xhr.onerror = function () {
@@ -27,7 +25,10 @@ function getAlbums() {
   xhr.open("GET", "http://localhost:8080/api/spotifyhome/", true);
   xhr.withCredentials = true;
   xhr.onload = function() {
-    displayAlbums(response);
+    console.log(xhr.statusText)
+    console.log(xhr.response)
+    console.log(JSON.parse(xhr.response))
+//    displayAlbums(response);
   };
   xhr.onerror = function () {
     console.error(xhr.statusText);
@@ -39,7 +40,7 @@ function getRecentlyPlayed() {
   xhr.open("GET", "http://localhost:8080/api/recentlyplayed/", true);
   xhr.withCredentials = true;
   xhr.onload = function() {
-    displayAlbums(response);
+    displayAlbums(JSON.parse(xhr.response));
   };
   xhr.onerror = function () {
     console.error(xhr.statusText);
@@ -47,12 +48,11 @@ function getRecentlyPlayed() {
   xhr.send();
 };
 
-function displayAlbums() {
-  var response = JSON.parse(xhr.response);
-  var albums = response.albums
+function displayAlbums(response) {
+  var albums = response.albums;
 
   var albumsList = document.getElementById('albums');
-  albumsList.innerHTML = ''
+  albumsList.innerHTML = '';
 
   for (var i = 0; i < albums.length; i++) {
     albumsList.innerHTML +=

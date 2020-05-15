@@ -66,6 +66,7 @@ function getNewAccessToken(refreshToken, callback) {
     'refresh_token': refreshToken
   })
 
+  console.log(refreshToken)
   const options = {
     hostname: 'accounts.spotify.com',
     path: '/api/token',
@@ -288,14 +289,15 @@ var server = http.createServer(function (req, res) {
         refreshToken = req.authTokens.refreshToken
         expiryDate = req.authTokens.expiryDate
     })
-
+    console.log("hello " + refreshToken)
     if (accessToken == null) {
       res.writeHead(200, { 'Content-Type': 'application/json' })
       res.end('no token')
     } else {
       // if token is expired, get new one with refresh token
       if (date.getTime() > expiryDate) {
-        getNewAccessToken(refreshToken, storeToken)
+	console.log(refreshToken)
+	getNewAccessToken(refreshToken, storeToken)
 
         function storeToken(err, response) {
           if (err) {

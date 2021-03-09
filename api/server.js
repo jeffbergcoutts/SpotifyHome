@@ -47,6 +47,7 @@ function requestToken(code, callback) {
       resBody = resBody + chunk
     })
     res.on('end', function() {
+      console.log(JSON.parse(resBody))
       callback(null, JSON.parse(resBody))
     })
   })
@@ -247,7 +248,9 @@ var server = http.createServer(function (req, res) {
     // LOGIN
 
     // Redirect to Spotify login page
-    res.writeHead(302, {'Location': 'https://accounts.spotify.com/authorize?client_id=' + clientID + '&response_type=code&redirect_uri=http://localhost:8080/callback&scope=user-read-recently-played user-library-read'})
+    //res.writeHead(302, {'Location': 'https://accounts.spotify.com/authorize?client_id=' + clientID + '&response_type=code&redirect_uri=http://localhost:8080/callback&scope=user-read-recently-played user-library-read'})
+    //res.writeHead(302, {'Location': 'https://accounts.spotify.com/authorize?client_id=' + clientID + '&response_type=code&redirect_uri=http://localhost:8080/callback&scope=user-top-read'})
+    res.writeHead(302, {'Location': 'https://accounts.spotify.com/authorize?client_id=' + clientID + '&response_type=code&redirect_uri=http://localhost:8080/callback&scope=playlist-modify-public'})
     res.end()
 
   } else if (/^\/callback/.test(req.url)) {
